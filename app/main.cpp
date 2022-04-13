@@ -14,8 +14,8 @@ Version: 0.9
 #include <vector>
 #include <cmath>
 #include <math.h>
-#include "md5.h"
-#include "include.h"
+#include "../include/md5.h"
+#include "../include/include.h"
 #include <time.h>
 #include <algorithm>
 #include <vector>
@@ -25,7 +25,7 @@ using namespace std;
 #define HASH_SIZE 16				// md5 hash function produce 16 characters as output
 #define NO_SEGMENTS 12				// numbers of segments, equals to "n" in algorithm
 #define SEGMENTS_LENGTH 12			// segments length (characters), equals to "m" in algorithm
-#define TEST_FILE "Test.txt"		// input text file for test
+#define TEST_FILE "sample_file.txt"		// input text file for test
 #define PRIMARY_KEY_LENGTH 100		// length of primary key
 #define PADDING_CHARACTER 'Z'		// padding character, used to make data size as multiplicat of HASH_SIZE
 
