@@ -3,6 +3,7 @@
 Paper Implementation
 Title: "Energy-efficient secure distributed storage in mobile cloud computing"
 Authors: Amir Afianian, Saeid Sarabi Nobakht, Mohammad Bagher Ghaznavi-Ghoushchi
+Implemented by: Saeid Sarabi Nobakht
 Version: 0.9
 ==================================================================================
 */
@@ -22,12 +23,17 @@ Version: 0.9
 
 using namespace std;
 
-#define HASH_SIZE 16				// md5 hash function produce 16 characters as output
-#define NO_SEGMENTS 12				// numbers of segments, equals to "n" in algorithm
-#define SEGMENTS_LENGTH 12			// segments length (characters), equals to "m" in algorithm
-#define TEST_FILE "sample_file.txt"		// input text file for test
-#define PRIMARY_KEY_LENGTH 100		// length of primary key
-#define PADDING_CHARACTER 'Z'		// padding character, used to make data size as multiplicat of HASH_SIZE
+#define HASH_SIZE 16                    // md5 hash function produce 16 characters as output
+#define NO_SEGMENTS 12                  // numbers of segments, equals to "n" in algorithm
+#define SEGMENTS_LENGTH 12              // segments length (characters), equals to "m" in algorithm
+#define TEST_FILE "sample_file.txt"	    // input text file for test
+#define ENCODING_OUT_FILE "output\\encode\\en.output.txt"   // output of encoding step
+#define TEMP_FILES_PATTERN "temp\\CDF.txt.split*"           // splitted files pattern
+#define TEMP_FILES_PATH "temp\\"        // temp path for middle files
+#define PRIMARY_KEY_LENGTH 100	        // length of primary key
+#define PADDING_CHARACTER 'Z'	        // padding character, used to make data size as multiplication of HASH_SIZE
+#define DECODED_RECOMBINED_FILE_PATH "output\\decode\\de.output.dbg.txt"    // ciphered recombined file
+#define FINAL_DECODED_FILE_PATH "output\\decode\\de.output.txt"             // final reconstructed file
 
 
 // forward decleration
@@ -50,10 +56,10 @@ int main()
 	std::vector<char> fileCon = ReadAllBytes(TEST_FILE);
 
 
-	std::string cipherKey = "";												  // cipher key will be exist in this string
-	std::string primaryKey = "";											  // primary key will be exist in this string
+	std::string cipherKey = "";     // cipher key will be existed in this string
+	std::string primaryKey = "";    // primary key will be existed in this string
 	
-	// amend number of input file characters to make multiplicant of HASH_SIZE
+	// amend number of input file characters to make multiplicand of HASH_SIZE
 	int paddingNumber = HASH_SIZE - (fileContent.length() % HASH_SIZE);
 	for (int i = 0; i < paddingNumber; ++i)
 	{
@@ -74,15 +80,13 @@ int main()
 		cipheredData[i] = fileContent[i] ^ cipherKey[i];
 	}
 
-
 	// calculate padding according to segment's length
 	int paddingSize = SEGMENTS_LENGTH - ((PRIMARY_KEY_LENGTH + inputTextValue.size()) % SEGMENTS_LENGTH);
-	std::string paddingValue = "";											  // segment filling padding string value
+	std::string paddingValue = "";          // segment filling padding string value
 	for (int i = 0; i<paddingSize; i++)
 	{
-		paddingValue += " ";												  // fill input string wit " " character to match its size with P.K.
+		paddingValue += " ";	            // fill input string wit " " character to match its size with P.K.
 	}
-	
 
 	int segmentSize = inputTextValue.size() / NO_SEGMENTS;
 	std::string masterKey = primaryKey;
@@ -100,8 +104,7 @@ int main()
 
 	encodeTime += (double)(clock() - tStart);
 
-
-	std::ofstream out("output\\encode\\en.output.txt");
+	std::ofstream out(ENCODING_OUT_FILE);
 	out << cipheredDataF;
 	out.close();
 
@@ -110,7 +113,7 @@ int main()
 	try
 	{
 		//---- Splite File Example
-		string inputFile = "output\\encode\\en.output.txt";
+		string inputFile = ENCODING_OUT_FILE;
 		TCHAR *param = new TCHAR[inputFile.size() + 1];
 		param[inputFile.size()] = 0;
 		//As much as we'd love to, we can't use memcpy() because
@@ -132,8 +135,8 @@ int main()
 		std::vector<std::string> segements;
 		WIN32_FIND_DATA search_data;
 		memset(&search_data, 0, sizeof(WIN32_FIND_DATA));
-		HANDLE handle = FindFirstFile("temp\\CDF.txt.split*", &search_data);
-		std::string tempFolder = "temp\\";
+		HANDLE handle = FindFirstFile(TEMP_FILES_PATTERN, &search_data);
+		std::string tempFolder = TEMP_FILES_PATH;
 		while(handle != INVALID_HANDLE_VALUE)
 		{
 		cout<<"\n"<<search_data.cFileName;
@@ -148,12 +151,10 @@ int main()
 		//Close the handle after use or memory/resource leak
 		FindClose(handle);
 
-		
-
 		tStart = clock();
 
 		//---- Recombine File Example	
-		string outputFile = "output\\decode\\de.output.dbg.txt";
+		string outputFile = DECODED_RECOMBINED_FILE_PATH;
 		TCHAR *param2 = new TCHAR[outputFile.size() + 1];
 		param2[outputFile.size()] = 0;
 		std::copy(outputFile.begin(), outputFile.end(), param2);
@@ -169,7 +170,7 @@ int main()
 		ifstream inFile;
 		size_t fsize = 0; // here
 
-		inFile.open("output\\decode\\de.output.dbg.txt", ios::in | ios::binary | ios::ate);
+		inFile.open(DECODED_RECOMBINED_FILE_PATH, ios::in | ios::binary | ios::ate);
 		char* oData = 0;
 
 		inFile.seekg(0, ios::end);		// set the pointer to the end
@@ -177,7 +178,7 @@ int main()
 		//cout << "Size of file: " << size;
 		inFile.seekg(0, ios::beg);		// set the pointer to the beginning
 
-		oData = new char[fsize + 1];		//  for the '\0'
+		oData = new char[fsize + 1];    //  for the '\0'
 		inFile.read(oData, fsize);
 		oData[fsize] = '\0';			// set '\0' 
 
@@ -188,7 +189,6 @@ int main()
 			decodedData.push_back(oData[i]);
 		}
 
-
 		tStart = clock();
 		decodedData = decodedData.substr(0, decodedData.size() - (masterKey.size() + paddingSize));
 		cipherKey = cipherKeyGen(primaryKey, decodedData.size());
@@ -196,7 +196,7 @@ int main()
 		{
 			decodedData[i] = decodedData[i] ^ cipherKey[i];
 		}
-		out.open("output\\decode\\de.output.txt");
+		out.open(FINAL_DECODED_FILE_PATH);
 		out << decodedData;
 		out.close();
 
@@ -212,13 +212,11 @@ int main()
 		getch();
 	}
 
-
 	return 0;
 }
 
 
-
-// this function converts md5 value in hex format to an string format
+// this function converts md5 value in hex format to a string format
 // for bitwise operations (in our case XOR), with need this translation
 // we define function as "inline" to speed up our code
 inline std::string md5ToString(std::string &md5InHexString)
