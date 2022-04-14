@@ -1,4 +1,4 @@
-#include "include.h"
+#include "../include/include.h"
 
 RabinIDA::RabinIDA(int n, int m)
 {
